@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const vhost = require("vhost");
 const adminRoute = require("./routes/adminRoute");
+const userRoute = require("./routes/userRoute");
 const connectDB = require("./config/db");
 const configApp = require("./config/app-config");
 
@@ -16,6 +17,8 @@ configApp(app, express);
 configApp(adminApp, express);
 
 adminApp.use(adminRoute);
+app.use(userRoute);
+
 connectDB(URL_DB);
 
 app.get("/", (request, response)=>{

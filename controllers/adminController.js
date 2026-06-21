@@ -24,16 +24,16 @@ const login = async function(request, response){
         // comparaison du mot de passe 
         if(await bcrypt.compare(user_account_password, adminUser.user_account_password)){
             // creation du token 
-            const token = jwt.sign({name: user_account_name, role: "admin"}, process.env.TOKEN_KEY, {expiresIn: "7d", algorithm: "HS256"});
+            const token = jwt.sign({id: adminUser._id, role: "admin"}, process.env.TOKEN_KEY, {expiresIn: "7d", algorithm: "HS256"});
             console.log("connexion de l'administrateur reuissit avec succes");
             return response.json({
-                message: "connexion de l'administrateur reuissit avec succes",
+                message: "connexion reuissit avec succes",
                 token, 
                 user: adminUser,
             });
         }
         return response.status(401).json({
-            message : "connexion de l'administrateur a echouee ",
+            message : "connexion echouee ",
         })
 
     } catch(error) {
