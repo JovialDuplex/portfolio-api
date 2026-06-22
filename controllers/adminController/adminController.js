@@ -2,7 +2,7 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const userModel = require("../models/users");
+const userModel = require("../../models/users");
 
 /**
  * ------------ Fonction pour connecter l'administrateur a sa page d'accueil -------------------
