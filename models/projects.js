@@ -36,6 +36,8 @@ const projectSchema = new mongoose.Schema({
     project_url: {
         type: mongooseType.String,
     }
+}, {
+    timestamps: true,
 });
 
 module.exports = mongoose.model("Project", projectSchema);

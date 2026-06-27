@@ -8,7 +8,9 @@ const projectCoverImageSchema = joi.object({
     size: joi.number().required().max(1024 * 1024 * 5).messages({
         "number.max": "L'image de couverture du project doit contenir au plus 5MB",
     }),
-    mimeType: joi.string().required().valid("image/jpeg", "image/png", "image/jpg"),
+    mimeType: joi.string().required().valid("image/jpeg", "image/png", "image/jpg").messages({
+        "any.allowOnly": "L'image de couverture des projets doit etre des fichier jpg, png, ou jpeg"
+    }),
 });
 
 const removeUploadedFile = async function(filename) {
