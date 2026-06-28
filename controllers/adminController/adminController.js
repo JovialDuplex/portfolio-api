@@ -9,7 +9,7 @@ const path = require("path");
 
 /**---------------------------------------------------------------
  * ------------ Fonction pour connecter l'administrateur a sa page d'accueil -------------------
- * POST : /admin/login
+ * POST : /admin/myself/login
  * @param {express.Request} request
  * @param {express.Response} response
  */
@@ -23,13 +23,14 @@ const login = async function(request, response){
             return response.status(401).json({message: "Une erreur est survenue lors de la connexion de l'admin "});
         }
         
-        console.log(adminUser);
         
         // comparaison du mot de passe 
         if(await adminUser.comparePassword(user_account_password)){
             // creation du token 
-            const token = jwt.sign({id: adminUser._id, role: "admin"}, process.env.TOKEN_KEY, {expiresIn: "7d", algorithm: "HS256"});
-            console.log("connexion de l'administrateur reuissit avec succes");
+            const token = jwt.sign({id: adminUser._id}, process.env.TOKEN_KEY, {expiresIn: "7d"});
+
+            console.log("connexion de l'administrateur reuissit avec succes !\n");
+            
             return response.json({
                 message: "connexion reuissit avec succes",
                 token, 
@@ -41,7 +42,9 @@ const login = async function(request, response){
         })
 
     } catch(error) {
-        response.status(500).json({message:"Une erreur serveur est survenue lors de la connexion de l'admin", error: error.message });
+        console.log("Une erreur serveur est survenue lors de l'authentification de l'admin : ", error , "\n");
+
+        response.status(500).json({message:"Une erreur serveur est survenue lors de l'authentification de l'admin", error: error.message });
         throw "une Erreur est survenu cote serveur", error;
         
     }
@@ -49,7 +52,7 @@ const login = async function(request, response){
 
 
 /**---------------------------------------------------------------
- * POST : /admin/register 
+ * POST : /admin/myself/register 
  * Cette fonction permet de cree un administrateur et a noter que cette route ne s'ouvre qu'une seule fois 
  * @param { express.Request } request
  * @param { express.Response } response
@@ -69,12 +72,13 @@ const register = async function(request, response){
         const myAdmin = new userModel({ 
             ...userData, 
             user_socialNetworks: JSON.parse(userData.user_socialNetworks), 
-            user_picture: "uploads/"+request.file.filename 
+            user_picture: "uploads/"+request.file.filename,
+            user_skills: JSON.parse(userData.user_skills),
         });
         
         await myAdmin.save();
         
-        console.log("l'administrateur a ete cree avec success ! :", myAdmin);
+        console.log("l'administrateur a ete cree avec success ! :", myAdmin, "\n");
 
         return response.json({
             message: "l'administrateur a ete cree avec success !",
@@ -82,7 +86,7 @@ const register = async function(request, response){
         });
 
     } catch(error){
-        console.log("une erreur est survenue lors du premier enregistrement de l'administrateur : ", error);
+        console.log("une erreur est survenue lors du premier enregistrement de l'administrateur : ", error, "\n");
 
         response.status(500).json({
             message: "une erreur est survenue lors du premier enregistrement de l'administrateur",
@@ -93,7 +97,9 @@ const register = async function(request, response){
 
 /** 
  * ---------------------------------------------------------------
- * @description Fonction permettant de mettre a jour les informations de l'utilisateur 
+ * Fonction permettant de mettre a jour les informations de l'utilisateur 
+ * 
+ * PUT: /admin/myself/update
  * @param { express.Request } request 
  * @param { express.Response } response 
  *  
@@ -101,9 +107,10 @@ const register = async function(request, response){
 const updateUser = async function(request, response){
     const userData = request.body;
     try{
+        const existingUser = await userModel.findOne({});
+
         if(request.file) {
-            // si un nouveau fichier a ete envoye 
-            const existingUser = await userModel.findOne({});
+            // supprimer l'ancien fichier si un nouveau a ete envoye 
             if(existingUser.user_picture) {
                 const oldImagePath = path.join(__dirname, "..", "..", "public", existingUser.user_picture);
                 try {
@@ -113,20 +120,28 @@ const updateUser = async function(request, response){
                 }
 
             }
-        } else {
-            delete userData.user_picture;
         }
 
-        const newUserData =  userModel.updateOne({...userData}, {new: true});
-        return response.json({
-            message: "L'utilisateur a ete mis a jour avec success ",
-            newUserData,
-        });
+        const newUser = await userModel.findOneAndUpdate({}, {
+            ...userData,
+            user_picture: request.file ? `uploads/${request.file.filename}` : existingUser.user_picture,
+            user_skills: userData.user_skills ? JSON.parse(userData.user_skills) : existingUser.user_skills,
+            user_socialNetworks : userData.user_socialNetworks ? JSON.parse(userData.user_socialNetworks) : existingUser.user_socialNetworks,
+            user_account_password: userData.user_account_password ? await bcrypt.hash(userData.user_account_password, await bcrypt.genSalt(10)) : existingUser.user_account_password,
 
+        }, {new: true});
+
+        console.log("L'utilisateur a ete mis a jour avec success ! : ", newUser, "\n");
+        
+        return response.json({
+
+            message: "L'utilisateur a ete mis a jour avec success !",
+            user: newUser,
+        })
     } catch(error){
         response.status(500).json({
             message: "une erreur est survenue lors de la mise a jour des infos de l'utilisateur ",
-            error: error
+            error: error.message
         });
 
         throw "Une erreur est survenue lors de la mise a jour des infos de l'utilisateur ! : ", error;
@@ -134,9 +149,36 @@ const updateUser = async function(request, response){
     }
 }
 
+/** 
+ * ---------------------------------------------------------------
+ * Fonction permettant de recuperer es informations de l'utilisateur 
+ * 
+ * PUT: /admin/myself/get-infos
+ * @param { express.Request } request 
+ * @param { express.Response } response 
+ *  
+ */
+const getInfos = async function(request, response) {
+    try{
+        const user = await userModel.findOne({});
+        console.log("les informations de l'utilisateur on ete recupere avec success :", user);
+        return response.json({
+            message: "Les informations de l'utilisateurs ont ete recuperer avec success !",
+            user: user
+        });
+
+    } catch(error){
+        return response.status(500).json({
+            message: "Une erreur serveur est survenue lors de la recuperation des infos sur l'utilisateur !",
+            error: error.message,
+        });
+    }
+
+};
 
 module.exports = {
     login,
     register,
     updateUser,
+    getInfos,
 }

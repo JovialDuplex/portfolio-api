@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const mongooseType = mongoose.Schema.Types;
 const bcrypt = require("bcryptjs");
+const { required } = require("joi");
 
 
 const userSchema = new mongoose.Schema({
@@ -44,6 +45,21 @@ const userSchema = new mongoose.Schema({
         type: mongooseType.String,
         required: true,
     },
+    user_skills: [
+        {
+            skill_name: {
+                type: mongooseType.String,
+                required: true,
+                trim: true
+            },
+
+            skill_icon: {
+                type: mongooseType.String,
+                required: true,
+                trim: true
+            }
+        }
+    ],
 
     user_socialNetworks: [
         {
@@ -70,14 +86,12 @@ const userSchema = new mongoose.Schema({
 });
 
 // Hacher le mot de passe de s'il a ete modifier ou a sa creation
-userSchema.pre("save", async function hashPassword() {
-    if (!this.isModified("user_account_password")) {
-        return;
-    }
+
+userSchema.pre("save", async function hashPassword() {   
     try {
         this.user_account_password = await bcrypt.hash(this.user_account_password, await bcrypt.genSalt(10));
     } catch(error) {
-        next(error);
+        throw "erreur lors du hashage du mot de passe ", error;
     }
 });
 
