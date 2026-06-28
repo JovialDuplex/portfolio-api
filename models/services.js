@@ -7,7 +7,7 @@ const serviceSchema = new mongoose.Schema({
         required: [true, "Le nom du service est requis !"],
         trim: true,
     },
-    service_description: {
+    service_desc: {
         type: mongooseType.String,
         required: [true, "La description du service est requise "],
         trim: true,
