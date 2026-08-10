@@ -11,6 +11,13 @@ const userSchema = new mongoose.Schema({
         maxlength: 16,
         trim: true,
     },
+    user_email: {
+        type: mongooseType.String,
+        required: true,
+        unique: true,
+        trim: true,
+    },
+
     user_secondName: {
         type: mongooseType.String,
         required: true,

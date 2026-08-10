@@ -128,7 +128,6 @@ const updateUser = async function(request, response){
             user_skills: userData.user_skills ? JSON.parse(userData.user_skills) : existingUser.user_skills,
             user_socialNetworks : userData.user_socialNetworks ? JSON.parse(userData.user_socialNetworks) : existingUser.user_socialNetworks,
             user_account_password: userData.user_account_password ? await bcrypt.hash(userData.user_account_password, await bcrypt.genSalt(10)) : existingUser.user_account_password,
-
         }, {new: true});
 
         console.log("L'utilisateur a ete mis a jour avec success ! : ", newUser, "\n");

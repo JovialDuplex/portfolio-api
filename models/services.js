@@ -12,16 +12,15 @@ const serviceSchema = new mongoose.Schema({
         required: [true, "La description du service est requise "],
         trim: true,
     },
-    service_icon: {
-        type: mongooseType.String,
-        required: [true, "le nom de l'icone du service est requis "],
-        trim: true,
-    },
     service_skills: {
         type: [mongooseType.String],
         default: [],
+    },
+    
+    service_category: {
+        type: mongooseType.ObjectId,
+        ref: "Category",
     }
-
 }, {
     timestamps: true,
 });
