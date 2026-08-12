@@ -15,7 +15,7 @@ const getServices = async function(request, response){
     
     try{
         if(request.query.id) {
-            const service = await serviceModel.findById(request.query.id);
+            const service = await serviceModel.findById(request.query.id).populate("service_skills").populate("service_category");
             const message = "Le service a ete recuperer avec success !";
 
             console.log(message + " : " + service);
@@ -25,7 +25,7 @@ const getServices = async function(request, response){
             });
         } 
 
-        const services = await serviceModel.find({});
+        const services = await serviceModel.find({}).populate("service_skills").populate("service_category");
         console.log("les services ont ete recuperer avec success ! : ", services);
         return response.json({
             message: "les services ont ete recuperer avec success !",
@@ -54,11 +54,18 @@ const getServices = async function(request, response){
 const createServices = async function(request, response){
     const serviceData = request.body;
     try {
+        const skills = serviceData.service_skills 
+            ? (typeof serviceData.service_skills === "string" ? JSON.parse(serviceData.service_skills) : serviceData.service_skills)
+            : [];
+
         const service = new serviceModel({
             ...serviceData,
-            service_skills: JSON.parse(serviceData.service_skills)
+            service_skills: skills
         });
         await service.save();
+        await service.populate("service_skills");
+        await service.populate("service_category");
+
         console.log("le service a ete creer avec succes ! : ", service);
         
         return response.json({
@@ -125,10 +132,16 @@ const updateServices = async function(request, response){
         try{
             const serviceData = request.body;
 
-            const newService = await serviceModel.findByIdAndUpdate(id, {
-                ...serviceData,
-                service_skills: JSON.parse(serviceData.service_skills),
-            }, {new: true});
+            const updatePayload = { ...serviceData };
+            if (serviceData.service_skills !== undefined) {
+                updatePayload.service_skills = typeof serviceData.service_skills === "string" 
+                    ? JSON.parse(serviceData.service_skills) 
+                    : serviceData.service_skills;
+            }
+
+            const newService = await serviceModel.findByIdAndUpdate(id, updatePayload, {new: true})
+                .populate("service_skills")
+                .populate("service_category");
 
             return response.json({
                 message: "Le service a ete mise a jour avec success ",

@@ -18,7 +18,7 @@ const login = async function(request, response){
     const {user_account_name, user_account_password} = request.body;
     // recuperer l'utilisateur 
     try {
-        const adminUser = await userModel.findOne({user_account_name});
+        const adminUser = await userModel.findOne({user_account_name}).populate("user_skills");
         if(!adminUser) {
             return response.status(401).json({message: "Une erreur est survenue lors de la connexion de l'admin "});
         }
@@ -69,14 +69,22 @@ const register = async function(request, response){
     const userData = request.body;
     
     try {
+        const parsedSocials = userData.user_socialNetworks 
+            ? (typeof userData.user_socialNetworks === "string" ? JSON.parse(userData.user_socialNetworks) : userData.user_socialNetworks)
+            : [];
+        const parsedSkills = userData.user_skills 
+            ? (typeof userData.user_skills === "string" ? JSON.parse(userData.user_skills) : userData.user_skills)
+            : [];
+
         const myAdmin = new userModel({ 
             ...userData, 
-            user_socialNetworks: JSON.parse(userData.user_socialNetworks), 
+            user_socialNetworks: parsedSocials, 
             user_picture: "uploads/"+request.file.filename,
-            user_skills: JSON.parse(userData.user_skills),
+            user_skills: parsedSkills,
         });
         
         await myAdmin.save();
+        await myAdmin.populate("user_skills");
         
         console.log("l'administrateur a ete cree avec success ! :", myAdmin, "\n");
 
@@ -122,13 +130,20 @@ const updateUser = async function(request, response){
             }
         }
 
+        const parsedSkills = userData.user_skills 
+            ? (typeof userData.user_skills === "string" ? JSON.parse(userData.user_skills) : userData.user_skills)
+            : existingUser.user_skills;
+        const parsedSocials = userData.user_socialNetworks 
+            ? (typeof userData.user_socialNetworks === "string" ? JSON.parse(userData.user_socialNetworks) : userData.user_socialNetworks)
+            : existingUser.user_socialNetworks;
+
         const newUser = await userModel.findOneAndUpdate({}, {
             ...userData,
             user_picture: request.file ? `uploads/${request.file.filename}` : existingUser.user_picture,
-            user_skills: userData.user_skills ? JSON.parse(userData.user_skills) : existingUser.user_skills,
-            user_socialNetworks : userData.user_socialNetworks ? JSON.parse(userData.user_socialNetworks) : existingUser.user_socialNetworks,
+            user_skills: parsedSkills,
+            user_socialNetworks: parsedSocials,
             user_account_password: userData.user_account_password ? await bcrypt.hash(userData.user_account_password, await bcrypt.genSalt(10)) : existingUser.user_account_password,
-        }, {new: true});
+        }, {new: true}).populate("user_skills");
 
         console.log("L'utilisateur a ete mis a jour avec success ! : ", newUser, "\n");
         
@@ -152,14 +167,14 @@ const updateUser = async function(request, response){
  * ---------------------------------------------------------------
  * Fonction permettant de recuperer es informations de l'utilisateur 
  * 
- * PUT: /admin/myself/get-infos
+ * GET: /admin/myself/get-infos
  * @param { express.Request } request 
  * @param { express.Response } response 
  *  
  */
 const getInfos = async function(request, response) {
     try{
-        const user = await userModel.findOne({});
+        const user = await userModel.findOne({}).populate("user_skills");
         console.log("les informations de l'utilisateur on ete recupere avec success :", user);
         return response.json({
             message: "Les informations de l'utilisateurs ont ete recuperer avec success !",

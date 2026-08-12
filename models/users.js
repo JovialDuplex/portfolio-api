@@ -6,7 +6,7 @@ const { required } = require("joi");
 
 const userSchema = new mongoose.Schema({
     user_name: {
-        type : mongooseType.String,
+        type: mongooseType.String,
         required: true,
         maxlength: 16,
         trim: true,
@@ -30,7 +30,7 @@ const userSchema = new mongoose.Schema({
         trim: true,
         maxlength: 16,
     },
-    user_account_password : {
+    user_account_password: {
         type: mongooseType.String,
         required: true,
         minlength: 4,
@@ -52,30 +52,20 @@ const userSchema = new mongoose.Schema({
         type: mongooseType.String,
         required: true,
     },
-    user_skills: [
-        {
-            skill_name: {
-                type: mongooseType.String,
-                required: true,
-                trim: true
-            },
-
-            skill_icon: {
-                type: mongooseType.String,
-                required: true,
-                trim: true
-            }
-        }
-    ],
+    user_skills: {
+        type: [mongooseType.ObjectId],
+        ref: "Skill",
+        default: []
+    },
 
     user_socialNetworks: [
         {
             social_name: {
                 type: mongooseType.String,
                 required: [true, "Le nom du reseaux social est requis "],
-                trim:true
+                trim: true
             },
-            
+
             social_icon: {
                 type: String,
                 required: [true, "L'icon du reseaux social est requis"]
@@ -94,10 +84,10 @@ const userSchema = new mongoose.Schema({
 
 // Hacher le mot de passe de s'il a ete modifier ou a sa creation
 
-userSchema.pre("save", async function hashPassword() {   
+userSchema.pre("save", async function hashPassword() {
     try {
         this.user_account_password = await bcrypt.hash(this.user_account_password, await bcrypt.genSalt(10));
-    } catch(error) {
+    } catch (error) {
         throw "erreur lors du hashage du mot de passe ", error;
     }
 });

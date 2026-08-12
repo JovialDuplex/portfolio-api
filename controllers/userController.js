@@ -11,16 +11,13 @@ const getUserInfos = async function(request, response) {
     try{
         const {id} = request.query;
         if(!id) {
-            const users = await userModel.find({}).select("-user_account_password -user_account_name");
+            const users = await userModel.find({}).select("-user_account_password -user_account_name").populate("user_skills");
             return response.json({
                 message: "Utilisateurs recuperer avec success",
                 users
             })
-            // return response.status(400).json({
-            //     message: "l'identifiant de l'utilisateur est requis pour pouvoir recuperer ces donnees "
-            // });
         }
-        const user = await userModel.findOne({_id: id}).select("-user_account_password -user_account_name");
+        const user = await userModel.findOne({_id: id}).select("-user_account_password -user_account_name").populate("user_skills");
 
         return response.json({
             "message": "Utilisateur recuperer avec success",

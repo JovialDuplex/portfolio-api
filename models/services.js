@@ -13,8 +13,8 @@ const serviceSchema = new mongoose.Schema({
         trim: true,
     },
     service_skills: {
-        type: [mongooseType.String],
-        default: [],
+        type: [mongooseType.ObjectId],
+        ref: "Skill"
     },
     
     service_category: {

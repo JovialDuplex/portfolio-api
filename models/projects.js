@@ -35,7 +35,13 @@ const projectSchema = new mongoose.Schema({
     },
     project_url: {
         type: mongooseType.String,
+    },
+    project_category: {
+    	type: mongooseType.ObjectId,
+    	ref: "Category",
     }
+    
+    
 }, {
     timestamps: true,
 });
