@@ -8,5 +8,6 @@ router.put("/update", upload.single("user_picture"), authMiddleware, userValidat
 router.post("/login", userValidation.loginValidation, adminController.login);
 router.post("/register", upload.single("user_picture"), adminController.register);
 router.get("/get-infos", authMiddleware, adminController.getInfos);
+router.post("/verify-password", authMiddleware, adminController.verifyPassword);
 
 module.exports = router;

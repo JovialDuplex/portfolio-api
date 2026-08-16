@@ -11,10 +11,10 @@ const express = require("express");
  * @param { express.Request } request 
  * @param { express.Response } response 
  */
-const getServices = async function(request, response){
-    
-    try{
-        if(request.query.id) {
+const getServices = async function (request, response) {
+
+    try {
+        if (request.query.id) {
             const service = await serviceModel.findById(request.query.id).populate("service_skills").populate("service_category");
             const message = "Le service a ete recuperer avec success !";
 
@@ -23,7 +23,7 @@ const getServices = async function(request, response){
                 message,
                 service
             });
-        } 
+        }
 
         const services = await serviceModel.find({}).populate("service_skills").populate("service_category");
         console.log("les services ont ete recuperer avec success ! : ", services);
@@ -32,7 +32,7 @@ const getServices = async function(request, response){
             services,
         });
 
-    } catch(error) {
+    } catch (error) {
         const message = "une Erreur serveur est survenue lors de la recuperation des services";
         console.log(message + " " + error);
         return response.status(500).json({
@@ -51,28 +51,28 @@ const getServices = async function(request, response){
  * @param { express.Request } request 
  * @param { express.Response } response 
  */
-const createServices = async function(request, response){
+const createServices = async function (request, response) {
     const serviceData = request.body;
     try {
-        const skills = serviceData.service_skills 
+        const skills = serviceData.service_skills
             ? (typeof serviceData.service_skills === "string" ? JSON.parse(serviceData.service_skills) : serviceData.service_skills)
             : [];
 
         const service = new serviceModel({
             ...serviceData,
-            service_skills: skills
+            // service_skills: skills
         });
         await service.save();
         await service.populate("service_skills");
         await service.populate("service_category");
 
         console.log("le service a ete creer avec succes ! : ", service);
-        
+
         return response.json({
             message: "Le service a ete creer avec succes !",
             service
         })
-    } catch(error) {
+    } catch (error) {
         console.log("Une erreur est survenue lors de la creation d'un service : ", error);
 
         return response.status(500).json({
@@ -90,10 +90,10 @@ const createServices = async function(request, response){
  * @param { express.Request } request 
  * @param { express.Response } response 
  */
-const deleteServices = async function(request, response){
-    
-    const {id} = request.query;
-    if (id){
+const deleteServices = async function (request, response) {
+
+    const { id } = request.query;
+    if (id) {
 
         try {
             await serviceModel.findByIdAndDelete(request.query.id);
@@ -101,16 +101,16 @@ const deleteServices = async function(request, response){
             return response.json({
                 message: "Le service a ete supprimer avec success !",
             });
-    
-        } catch(error) {
+
+        } catch (error) {
             console.log("Une erreur est survenue lors de la suppression d'un service : ", error);
-    
+
             return response.status(500).json({
                 message: "Une erreur est survenue lors de la suppression d'un service",
                 error: error.message
             });
         }
-    } 
+    }
 
     return response.status(400).json({
         message: "L'identifiant est obligatoire pour supprimer un article ",
@@ -125,21 +125,21 @@ const deleteServices = async function(request, response){
  * @param { express.Response } response 
  */
 
-const updateServices = async function(request, response){
-    const {id} = request.query;
-    if(id) {
+const updateServices = async function (request, response) {
+    const { id } = request.query;
+    if (id) {
 
-        try{
+        try {
             const serviceData = request.body;
 
             const updatePayload = { ...serviceData };
             if (serviceData.service_skills !== undefined) {
-                updatePayload.service_skills = typeof serviceData.service_skills === "string" 
-                    ? JSON.parse(serviceData.service_skills) 
+                updatePayload.service_skills = typeof serviceData.service_skills === "string"
+                    ? JSON.parse(serviceData.service_skills)
                     : serviceData.service_skills;
             }
 
-            const newService = await serviceModel.findByIdAndUpdate(id, updatePayload, {new: true})
+            const newService = await serviceModel.findByIdAndUpdate(id, updatePayload, { new: true })
                 .populate("service_skills")
                 .populate("service_category");
 
@@ -147,16 +147,16 @@ const updateServices = async function(request, response){
                 message: "Le service a ete mise a jour avec success ",
                 service: newService,
             })
-            
-        } catch(error){
+
+        } catch (error) {
             console.log("Une erreur est survenue lors de la mise a jour d'un service : ", error);
-    
+
             return response.status(500).json({
                 message: "Une erreur est survenue lors de la mise a jour d'un service",
                 error: error.message
             });
         }
-    } 
+    }
     return response.status(400).json({
         message: "L'identifiant du service est requis pour effectuer une modification "
     })

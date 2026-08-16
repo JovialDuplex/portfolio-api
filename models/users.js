@@ -17,13 +17,23 @@ const userSchema = new mongoose.Schema({
         unique: true,
         trim: true,
     },
-
     user_secondName: {
         type: mongooseType.String,
         required: true,
         maxlength: 16,
         trim: true
     },
+    user_contact_phone: {
+        type: mongooseType.String,
+        required: true,
+        trim: true,
+    },
+    user_whatsapp_phone: {
+        type: mongooseType.String,
+        required: true,
+        trim: true,
+    },
+
     user_account_name: {
         type: mongooseType.String,
         required: true,
@@ -82,13 +92,13 @@ const userSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Hacher le mot de passe de s'il a ete modifier ou a sa creation
-
+// Hacher le mot de passe s'il a été modifié ou à sa création
 userSchema.pre("save", async function hashPassword() {
+    if (!this.isModified("user_account_password")) return;
     try {
         this.user_account_password = await bcrypt.hash(this.user_account_password, await bcrypt.genSalt(10));
     } catch (error) {
-        throw "erreur lors du hashage du mot de passe ", error;
+        throw new Error("Erreur lors du hashage du mot de passe : " + error.message);
     }
 });
 

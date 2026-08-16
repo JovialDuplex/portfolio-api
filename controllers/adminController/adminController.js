@@ -117,6 +117,10 @@ const updateUser = async function(request, response){
     try{
         const existingUser = await userModel.findOne({});
 
+        if (!existingUser) {
+            return response.status(404).json({ message: "Aucun utilisateur trouve en base de donnee" });
+        }
+
         if(request.file) {
             // supprimer l'ancien fichier si un nouveau a ete envoye 
             if(existingUser.user_picture) {
@@ -124,42 +128,46 @@ const updateUser = async function(request, response){
                 try {
                     await fs.promises.unlink(oldImagePath);
                 } catch (error) {
-                    if (error.code !== "ENOENT") throw error;
+                    if (error.code !== "ENOENT") console.log("Erreur suppression ancienne image:", error);
                 }
-
             }
         }
 
-        const parsedSkills = userData.user_skills 
-            ? (typeof userData.user_skills === "string" ? JSON.parse(userData.user_skills) : userData.user_skills)
-            : existingUser.user_skills;
         const parsedSocials = userData.user_socialNetworks 
             ? (typeof userData.user_socialNetworks === "string" ? JSON.parse(userData.user_socialNetworks) : userData.user_socialNetworks)
             : existingUser.user_socialNetworks;
 
-        const newUser = await userModel.findOneAndUpdate({}, {
+        const parsedSkills = userData.user_skills 
+            ? (typeof userData.user_skills === "string" ? JSON.parse(userData.user_skills) : userData.user_skills)
+            : existingUser.user_skills;
+
+        const updatePayload = {
             ...userData,
-            user_picture: request.file ? `uploads/${request.file.filename}` : existingUser.user_picture,
-            user_skills: parsedSkills,
             user_socialNetworks: parsedSocials,
-            user_account_password: userData.user_account_password ? await bcrypt.hash(userData.user_account_password, await bcrypt.genSalt(10)) : existingUser.user_account_password,
-        }, {new: true}).populate("user_skills");
+            user_skills: parsedSkills,
+            user_picture: request.file ? `uploads/${request.file.filename}` : existingUser.user_picture,
+        };
+
+        if (userData.user_account_password && typeof userData.user_account_password === "string" && userData.user_account_password.trim() !== "") {
+            updatePayload.user_account_password = await bcrypt.hash(userData.user_account_password, await bcrypt.genSalt(10));
+        } else {
+            delete updatePayload.user_account_password;
+        }
+
+        const newUser = await userModel.findOneAndUpdate({}, updatePayload, {new: true}).populate("user_skills");
 
         console.log("L'utilisateur a ete mis a jour avec success ! : ", newUser, "\n");
         
         return response.json({
-
             message: "L'utilisateur a ete mis a jour avec success !",
             user: newUser,
-        })
+        });
     } catch(error){
-        response.status(500).json({
-            message: "une erreur est survenue lors de la mise a jour des infos de l'utilisateur ",
+        console.log("Une erreur est survenue lors de la mise a jour des infos de l'utilisateur : ", error);
+        return response.status(500).json({
+            message: "Une erreur est survenue lors de la mise a jour des infos de l'utilisateur ",
             error: error.message
         });
-
-        throw "Une erreur est survenue lors de la mise a jour des infos de l'utilisateur ! : ", error;
-
     }
 }
 
@@ -190,9 +198,35 @@ const getInfos = async function(request, response) {
 
 };
 
+/**
+ * Fonction permettant de verifier le mot de passe de l'utilisateur 
+ * POST: /admin/myself/verify-password
+ * @param {express.Request} request 
+ * @param {express.Response} response 
+ */
+const verifyPassword = async function(request, response){
+    const {password} = request.body;
+    
+    try{
+        const user = await userModel.findOne({});
+        if(await user.comparePassword(password)) {
+            return response.json({message: "mot de passe verifie avec success et valide", result: true})
+        }
+        return response.status(400).json({message: "mot de passe verifier avec et est invalide", result: false});
+
+    } catch(error) {
+        return response.status(500).json({
+            message: "Une erreur serveur est survenue lors de la verification du mot de passe de l'utilisateur ",
+            error: error.message
+        })
+    }
+
+}
+
 module.exports = {
     login,
     register,
     updateUser,
     getInfos,
+    verifyPassword,
 }

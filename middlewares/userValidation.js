@@ -7,19 +7,22 @@ const userDataUpdateSchema = joi.object({
     user_secondName: joi.string().optional(),
     user_jobName: joi.string().optional(),
     user_desc: joi.string().optional(),
+    user_email: joi.string().email().optional(),
+    user_contact_phone: joi.string().optional(),
+    user_whatsapp_phone: joi.string().optional(),
+    user_account_name: joi.string().optional(),
+    user_account_password: joi.string().optional().allow("", null),
     user_picture: joi.object({
-        size: joi.number().max(5* 1024* 1024).required().messages({
-            "number.max" : "La taille du fichier ne doit pas depasser 5Mo"
+        size: joi.number().max(5 * 1024 * 1024).required().messages({
+            "number.max": "La taille du fichier ne doit pas depasser 5Mo"
         }),
         mimetype: joi.string().valid("image/jpeg", "image/png", "image/jpg").required().messages({
             "any.allowOnly": "L'image de couverture de l'utilisateur doit etre un fichier .png, .jpg ou .jpeg",
         })
-
-    }).optional(),
-
+    }).optional().allow(null),
     user_socialNetworks: joi.array().optional(),
     user_skills: joi.array().optional(),
-});
+}).unknown(true);
 
 // schema de validation pour l'authentification
 const loginDataShema = joi.object({
@@ -74,20 +77,35 @@ const loginValidation = function(request, response, next) {
 const updateUserValidation = function(request, response, next){
     console.log("validation des infos de l'utilisateur en cours ....");
     
-    const userData = request.body;
+    let userData = { ...request.body };
     if(!userData) {
         return response.status(400).json({
             message: "Les donnee de l'utilisateur sont necessaire pour faire valider le formulaire",
         });
     }
+
+    if (typeof userData.user_socialNetworks === "string") {
+        try {
+            userData.user_socialNetworks = JSON.parse(userData.user_socialNetworks);
+        } catch (e) {
+            userData.user_socialNetworks = [];
+        }
+    }
+
+    if (typeof userData.user_skills === "string") {
+        try {
+            userData.user_skills = JSON.parse(userData.user_skills);
+        } catch (e) {
+            userData.user_skills = [];
+        }
+    }
+
     const {error} = userDataUpdateSchema.validate({
         ...userData, 
-        user_picture: request.file && {
+        user_picture: request.file ? {
             size: request.file.size,
             mimetype: request.file.mimetype,
-        }, 
-        user_socialNetworks: userData.user_socialNetworks && JSON.parse(userData.user_socialNetworks),
-        user_skills: userData.user_skills && JSON.parse(userData.user_skills)
+        } : undefined, 
 
     }, {abortEarly: false});
 

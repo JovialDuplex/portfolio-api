@@ -8,11 +8,13 @@ const addServiceValidationSchema = joi.object({
     service_desc: joi.string().required().messages({
         "string.empty": "La description du service est requise a sa creation "
     }),
-    service_icon: joi.string().required().messages({
-        "string.empty": "L'icone du service est requise a sa creation "
-    }),
+
     service_skills: joi.array().required(),
-    
+
+    service_category: joi.string().required().messages({
+        "string.empty": "La categorie du service est requise a sa creation "
+    }),
+
 });
 
 
@@ -22,12 +24,12 @@ const addServiceValidationSchema = joi.object({
  * @param { express.Response } response 
  * @param { express.NextFunction } next 
  */
-const addServiceValidation = function(request, response, next){
+const addServiceValidation = function (request, response, next) {
     const serviceData = request.body;
-    if(serviceData) {
-        const {error} = addServiceValidationSchema.validate({...serviceData, service_skills:JSON.parse(serviceData.service_skills)}, {abortEarly: false});
-        if(error) {
-            const details = error.details.map((detail)=>({
+    if (serviceData) {
+        const { error } = addServiceValidationSchema.validate({ ...serviceData }, { abortEarly: false });
+        if (error) {
+            const details = error.details.map((detail) => ({
                 message: detail.message,
                 path: detail.path
             }));

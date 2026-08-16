@@ -12,11 +12,12 @@ const serviceSchema = new mongoose.Schema({
         required: [true, "La description du service est requise "],
         trim: true,
     },
-    service_skills: {
-        type: [mongooseType.ObjectId],
-        ref: "Skill"
-    },
-    
+    service_skills: [
+        {
+            type: mongooseType.ObjectId,
+            ref: "Skill",
+        },
+    ],
     service_category: {
         type: mongooseType.ObjectId,
         ref: "Category",
