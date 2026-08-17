@@ -48,6 +48,11 @@ connectDB(URL_DB).catch((error) => {
     process.exit(1);
 });
 
+app.get("/", (request, response)=>{
+    console.log("welcome to my API")
+    response.send("welcome to jovial-portfolio-api this API is built for communicate with my frontend design ");
+});
+
 app.listen(PORT, function(error){
     if(error) {
         console.error("Erreur lors du lancement du serveur : ", error);
