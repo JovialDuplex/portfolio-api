@@ -1,7 +1,6 @@
 const joi = require("joi");
-const fs = require("fs");
-const path = require("path");
 const projectModel = require("../models/projects");
+const { cleanupOnError } = require("../config/multer-config");
 
 
 const projectCoverImageSchema = joi.object({
@@ -12,15 +11,6 @@ const projectCoverImageSchema = joi.object({
         "any.allowOnly": "L'image de couverture des projets doit etre des fichier jpg, png, ou jpeg"
     }),
 });
-
-const removeUploadedFile = async function(filename) {
-    const filePath = path.join(__dirname, "..", "public", "uploads", filename);
-    try {
-        await fs.promises.unlink(filePath);
-    } catch (error) {
-        if (error.code !== "ENOENT") throw error;
-    }
-};
 
 const addProjectValidationSchema = joi.object({
     project_title: joi.string().required().max(32).messages({
@@ -80,13 +70,8 @@ const addProjectValidation = async function(request, response, next){
     } : null});
 
     if(error) {
-        if(request.file) {
-            try {
-                await removeUploadedFile(request.file.filename);
-            } catch (unlinkError) {
-                console.log("erreur lors de la suppression du fichier : ", unlinkError);
-                return response.status(500).json({message: "Erreur lors de la suppression du fichier"});
-            }
+        if (request.file) {
+            await cleanupOnError(request.file);
         }
         const details = error.details.map((detail) => ({
             message: detail.message,
@@ -137,12 +122,7 @@ const updateProjectValidation = async function(request, response, next){
 
         if (error) {
             if (request.file) {
-                try {
-                    await removeUploadedFile(request.file.filename);
-                } catch (unlinkError) {
-                    console.log("erreur lors de la suppression du fichier : ", unlinkError);
-                    return response.status(500).json({ message: "Erreur lors de la suppression du fichier" });
-                }
+                await cleanupOnError(request.file);
             }
             const details = error.details.map((detail) => ({
                 message: detail.message,

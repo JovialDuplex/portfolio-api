@@ -3,8 +3,7 @@ const express = require("express");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const userModel = require("../../models/users");
-const fs = require("fs");
-const path = require("path");
+const { deleteImage } = require("../../config/multer-config");
 
 
 /**---------------------------------------------------------------
@@ -29,6 +28,8 @@ const login = async function(request, response){
             // creation du token 
             const token = jwt.sign({id: adminUser._id}, process.env.TOKEN_KEY, {expiresIn: "7d"});
 
+            adminUser.user_account_password = undefined;
+
             console.log("connexion de l'administrateur reuissit avec succes !\n");
             
             return response.json({
@@ -44,9 +45,7 @@ const login = async function(request, response){
     } catch(error) {
         console.log("Une erreur serveur est survenue lors de l'authentification de l'admin : ", error , "\n");
 
-        response.status(500).json({message:"Une erreur serveur est survenue lors de l'authentification de l'admin", error: error.message });
-        throw "une Erreur est survenu cote serveur", error;
-        
+        return response.status(500).json({message:"Une erreur serveur est survenue lors de l'authentification de l'admin", error: error.message });
     }
 };
 
@@ -79,12 +78,14 @@ const register = async function(request, response){
         const myAdmin = new userModel({ 
             ...userData, 
             user_socialNetworks: parsedSocials, 
-            user_picture: "uploads/"+request.file.filename,
+            user_picture: request.file.url,
             user_skills: parsedSkills,
         });
         
         await myAdmin.save();
         await myAdmin.populate("user_skills");
+        
+        myAdmin.user_account_password = undefined;
         
         console.log("l'administrateur a ete cree avec success ! :", myAdmin, "\n");
 
@@ -122,13 +123,12 @@ const updateUser = async function(request, response){
         }
 
         if(request.file) {
-            // supprimer l'ancien fichier si un nouveau a ete envoye 
+            // supprimer l'ancienne image si un nouveau fichier a ete envoye 
             if(existingUser.user_picture) {
-                const oldImagePath = path.join(__dirname, "..", "..", "public", existingUser.user_picture);
                 try {
-                    await fs.promises.unlink(oldImagePath);
+                    await deleteImage(existingUser.user_picture);
                 } catch (error) {
-                    if (error.code !== "ENOENT") console.log("Erreur suppression ancienne image:", error);
+                    console.log("Erreur suppression ancienne image:", error);
                 }
             }
         }
@@ -145,7 +145,7 @@ const updateUser = async function(request, response){
             ...userData,
             user_socialNetworks: parsedSocials,
             user_skills: parsedSkills,
-            user_picture: request.file ? `uploads/${request.file.filename}` : existingUser.user_picture,
+            user_picture: request.file ? request.file.url : existingUser.user_picture,
         };
 
         if (userData.user_account_password && typeof userData.user_account_password === "string" && userData.user_account_password.trim() !== "") {
@@ -155,6 +155,7 @@ const updateUser = async function(request, response){
         }
 
         const newUser = await userModel.findOneAndUpdate({}, updatePayload, {new: true}).populate("user_skills");
+        newUser.user_account_password = undefined;
 
         console.log("L'utilisateur a ete mis a jour avec success ! : ", newUser, "\n");
         

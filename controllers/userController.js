@@ -26,12 +26,10 @@ const getUserInfos = async function(request, response) {
 
     } catch(error){
 
-        response.status(500).json({
+        return response.status(500).json({
             message: "Une erreur est survenue lors de la recuperation de l'utilisateur",
-            error: error,
+            error: error.message,
         });
-
-        throw "une erreur est survenue lors de la recuperation de l'utilisateur : ",error;
     }
 };
 

@@ -1,8 +1,7 @@
 const express = require("express");
 const projectModel = require("../../models/projects");
 const users = require("../../models/users");
-const fs = require("fs");
-const path = require("path");
+const { deleteImage } = require("../../config/multer-config");
 
 
 /**
@@ -56,21 +55,18 @@ const updateProject = async function(request, response){
 
     if(id) {
         try {
-        // si un fichier a ete ajouter on le stocke dans le dossier uploads de public et sinon on garde l'ancien fichier
+        // si un fichier a ete ajoute on l'envoie sur Cloudinary et sinon on garde l'ancienne image
             if(request.file) {
                 const existingProject = await projectModel.findById(id);
 
                 if (existingProject?.project_cover_image) {
-                    const oldImagePath = path.join(
-                        __dirname, "..", "..", "public", existingProject.project_cover_image
-                    );
                     try {
-                        await fs.promises.unlink(oldImagePath);
+                        await deleteImage(existingProject.project_cover_image);
                     } catch (error) {
                         if (error.code !== "ENOENT") throw error;
                     }
                 }
-                projectData.project_cover_image = "uploads/" + request.file.filename;
+                projectData.project_cover_image = request.file.url;
             } else {
                 delete projectData.project_cover_image;
             }
@@ -117,11 +113,8 @@ const deleteProject = async function(request, response) {
         }
 
         if (myProject.project_cover_image) {
-            const imagePath = path.join(
-                __dirname, "..", "..", "public", myProject.project_cover_image
-            );
             try {
-                await fs.promises.unlink(imagePath);
+                await deleteImage(myProject.project_cover_image);
             } catch (error) {
                 if (error.code !== "ENOENT") throw error;
             }
@@ -149,7 +142,7 @@ const deleteProject = async function(request, response) {
  */
 const createProject = async function(request, response) {
     try{
-        const myProject = new projectModel({...request.body, project_cover_image: "uploads/" + request.file.filename});
+        const myProject = new projectModel({...request.body, project_cover_image: request.file.url});
         await myProject.save();
         console.log("Le project a ete cree avec success avec le titre : ", myProject);
         return response.json({message: "Le project a ete cree avec success !", project: myProject});
