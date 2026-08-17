@@ -13,4 +13,5 @@ router.use("/category", categoryRoutes);
 router.use("/skills", skillRoutes);
 
 router.get("/get-infos", userController.getUserInfos);
+router.get("/", (request, response)=>{ console.log("welcome to my API"); return response.send("welcome to my API "); });
 module.exports = router;
