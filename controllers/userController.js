@@ -3,6 +3,7 @@ const userModel = require("../models/users");
 
 /**
  * Fonction permettant de recuperer les infos de l'utilisateur
+ * GET: /get-infos
  * @param {express.Request} request 
  * @param {express.Response} response 
  */
