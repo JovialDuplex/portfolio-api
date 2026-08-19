@@ -48,11 +48,14 @@ connectDB(URL_DB).catch((error) => {
     process.exit(1);
 });
 
-app.listen(PORT, function(error){
-    if(error) {
-        console.error("Erreur lors du lancement du serveur : ", error);
-        process.exit(1);
-    }
-    console.log("serveur demarrer avec succes sur le port ", PORT);
-});
+if(process.env.NODE_ENV !== "production") {
+    app.listen(PORT, function(error){
+        if(error) {
+            console.error("Erreur lors du lancement du serveur : ", error);
+            process.exit(1);
+        }
+        console.log("serveur demarrer avec succes sur le port ", PORT);
+    });
+}
 
+module.exports = app;
